@@ -9,12 +9,19 @@
         :height="videoHeight[1]"
         :src="recordUrl"
       />
-
     </div>
 
     <div class="controls">
       <div class="timer">
-        {{ timerStr }} {{ timerCount}}
+        <div v-if="this.webcam === 'nothing'">
+          {{ timerStr[0] }}
+        </div>
+        <div v-if="this.webcam === 'start'">
+          {{ timerStr[1] }} {{ timerCount}} {{ timerStr[3] }}
+        </div>
+        <div v-if="this.webcam === 'stop'">
+          {{ timerStr[2] }} {{ timerCount}} {{ timerStr[3] }}
+        </div>
       </div>
 
       <button v-if="showStartRecordingButton" class="button" @click="onStartPreview" title="Start recording">
@@ -22,13 +29,6 @@
       </button>
       <button v-else class="button" title="Stop">
         <img class="icon" src="../assets/icons/stop.svg" />
-      </button>
-
-      <button v-if="showPauseRecordingButton" class="button" title="Pause" @click="onPauseRecording">
-        <img class="icon" src="../assets/icons/pause.svg" />
-      </button>
-      <button v-else class="button" :disabled="resumeButtonDisabled" title="Resume" @click="onResumeRecording">
-        <img class="icon" src="../assets/icons/resume-record.svg" />
       </button>
 
       <button class="button" :disabled="downloadButtonDisabled" title="Download" @click="onDownloadRecord">
@@ -59,6 +59,8 @@ const STATE = {
   STOPRECORD: 'stop',
 };
 
+//import RecorderPage from '@/components/RecorderPage';
+
 export default {
   name: 'AppMediaRecorder',
   props: {
@@ -87,9 +89,8 @@ export default {
       recorderState: RECORDER_STATE.INACTIVE,
 
       // Timer
-      timerStr: "Timer: ",
+      timerStr: ["Please click the red button to start recording ","Recording starts in: ","Recording ends in: ", " seconds"],
       timerCount: 0,
-
       webcam: STATE.NOTHING,
     };
   },
@@ -104,8 +105,12 @@ export default {
       const w = window.innerWidth;
       const h = window.innerHeight;
       const res = w / h;
-      const width = Math.min(w, 800);
-      const height = width / res;
+      var width = Math.min(w, 800);
+      var height = (width / res);
+
+      if (width < 1280) {width = 1280}
+      if (height < 720) {height = 720}
+
       return [ width, height ];
     },
     videoContainerStyles() {
@@ -171,19 +176,18 @@ export default {
       }
     },
     onStartPreview() {
-      this.webcam = STATE.STARTRECORD
+      this.webcam = STATE.STARTRECORD;
       this.recordBlob = null;
       this.timerCount = 5;
 
       this.$nextTick(() => {
           this.$refs.video.srcObject = this.videoStream;
           this.$refs.video.play();
-
       });
     },
 
     onStartRecording() {
-      this.timerCount = 11;
+      this.timerCount = 10;
       this.webcam = STATE.STOPRECORD
 
       this.$nextTick(() => {
@@ -236,6 +240,9 @@ export default {
       else if (this.webcam === STATE.STOPRECORD) {
         this.onTimerRecording()
       }
+    },
+    videoResolution(variable) {
+      console.log(variable)
     },
   },
 

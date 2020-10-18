@@ -4,7 +4,7 @@
     <select class="camera-selection" v-model="deviceId">
       <option>--Select Device--</option>
         <option
-            v-for="device in cameras"
+            v-for="device in devices"
             :key="device.deviceId"
             :value="device.deviceId"
             >{{device.label}}
@@ -24,13 +24,38 @@ export default {
   components: {
     AppMediaRecorder,
  },
+
+ props: {
+   width: {
+      type: [Number, String],
+      default: "100%"
+    },
+    height: {
+      type: [Number, String],
+      default: 500
+    },
+    selectFirstDevice: {
+      type: Boolean,
+      default: false
+    },
+    resolution: {
+      type: Object,
+      default: null,
+      validator: value => {
+        return value.height && value.width;
+      }
+    }
+ },
   data() {
     return {
       audioStream: false,
       videoStream: false,
 
+      // Webcam selection
       deviceId: null,
+      devices: [],
       cameras: [],
+      camerasListEmitted: false,
     };
   },
 
@@ -38,12 +63,28 @@ export default {
     deviceId: function(id) {
       //this.cameraCheck();
       this.updateWebcam(id);
+    },
+    devices: function() {
+        // eslint-disable-next-line no-unused-vars
+        const [first, ...tail] = this.devices;
+        if (first) {
+            //this.camera = first.deviceId;
+            this.deviceId = first.deviceId;
+        }
     }
   },
 
   methods: {
     testMediaAccess() {
-      navigator.mediaDevices.getUserMedia({ audio: false,  video: { width: 640, height: 360 } }).then(stream=> {
+
+      let constraints = {video: true};
+
+      if (this.resolution) {
+        constraints.video = {};
+        constraints.video.height = this.resolution.height;
+        constraints.video.width = this.resolution.width;
+      }
+      navigator.mediaDevices.getUserMedia(constraints).then(stream=> {
         let tracks = stream.getTracks();
         tracks.forEach(track => {
           track.stop();
@@ -57,15 +98,37 @@ export default {
         for (let i =0; i !== deviceInfos.length; ++i) {
           let deviceInfo = deviceInfos[i];
           if (deviceInfo.kind === "videoinput") {
-            this.cameras.push(deviceInfo);
+            this.devices.push(deviceInfo);
             //console.log(deviceInfo)
           }
         }
       })
+      // New code, delete if does not work
+      .then(() => {
+        if (!this.camerasListEmitted) {
+          if (this.selectFirstDevice && this.devices.length > 0) {
+            this.deviceId = this.devices[0].deviceId;
+          }
+
+          this.$emit("cameras", this.devices);
+          this.camerasListEmitted = true;
+        }
+      })
+      .catch(error => this.$emit("Not supported", error));
+
     },
 
     getCameraStream(device) {
-      let constraints = { audio: false,  video: { width: 640, height: 360, deviceId: device } };
+      let constraints = { audio: false,  video: {deviceId: device } };
+
+      if (this.resolution) {
+        constraints.video.height = this.resolution.height;
+        constraints.video.width = this.resolution.width;
+      }
+      else{
+        constraints.video.height = 720;
+        constraints.video.width = 1280;
+      }
       return navigator.mediaDevices.getUserMedia(constraints).catch(console.error);
     },
 
