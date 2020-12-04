@@ -121,14 +121,8 @@ export default {
     getCameraStream(device) {
       let constraints = { audio: false,  video: {deviceId: device } };
 
-      if (this.resolution) {
-        constraints.video.height = this.resolution.height;
-        constraints.video.width = this.resolution.width;
-      }
-      else{
-        constraints.video.height = 720;
-        constraints.video.width = 1280;
-      }
+      constraints.video.height = 360;
+      constraints.video.width = 640;
       return navigator.mediaDevices.getUserMedia(constraints).catch(console.error);
     },
 

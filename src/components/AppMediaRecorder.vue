@@ -138,8 +138,17 @@ export default {
       if (!this.combinedStream) {
         return null;
       }
-      const recorder = new MediaRecorder(this.combinedStream);
-      recorder.ondataavailable = (dataObj) => this.recordBlob = dataObj.data;
+      var options = {
+        videoBitsPerSecond: 2500000,
+        mimeType: 'video/webm',
+      }
+      const recorder = new MediaRecorder(this.combinedStream, options);
+      //recorder.mimeType;
+      recorder.ondataavailable = (dataObj) => this.recordBlob = dataObj.data;//new Blob(dataObj.data, { type: "video/webm"});
+
+      // Delete if it does not work
+      //recorder.ondataavailable = this.handleDataAvailable((dataObj) => this.recordBlob = dataObj.data);
+      //console.log((dataObj) => this.recordBlob = dataObj.data)
       return recorder;
     },
     showStartRecordingButton() {
@@ -178,7 +187,7 @@ export default {
     onStartPreview() {
       this.webcam = STATE.STARTRECORD;
       this.recordBlob = null;
-      this.timerCount = 5;
+      this.timerCount = 1;
 
       this.$nextTick(() => {
           this.$refs.video.srcObject = this.videoStream;
@@ -187,7 +196,7 @@ export default {
     },
 
     onStartRecording() {
-      this.timerCount = 10;
+      this.timerCount = 5;
       this.webcam = STATE.STOPRECORD
 
       this.$nextTick(() => {
@@ -227,10 +236,12 @@ export default {
     },
     onDownloadRecord() {
       if (this.recordUrl !== '') {
-        const a = document.createElement('a');
+        var a = document.createElement('a');
+        document.body.appendChild(a);
         a.href = this.recordUrl;
-        a.download = `0000-${Date.now()}.avi`;
+        a.download = `0000-${Date.now()}.webm`;
         a.click();
+        window.URL.revokeObjectURL(this.recordUrl);
       }
     },
     onTimerState() {
@@ -240,9 +251,6 @@ export default {
       else if (this.webcam === STATE.STOPRECORD) {
         this.onTimerRecording()
       }
-    },
-    videoResolution(variable) {
-      console.log(variable)
     },
   },
 
